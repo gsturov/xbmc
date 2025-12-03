@@ -22,6 +22,7 @@
 #include "settings/SettingsComponent.h"
 #include "utils/log.h"
 #include "windowing/WinSystem.h"
+#include "filesystem/File.h"
 
 #include <memory>
 #include <mutex>
@@ -30,6 +31,7 @@ using namespace AE;
 using namespace ActiveAE;
 
 using namespace std::chrono_literals;
+using namespace XFILE;
 
 namespace
 {
@@ -3517,4 +3519,26 @@ void CActiveAE::UnregisterAudioCallback(IAudioCallback* pCallback)
   auto it = std::find(m_audioCallback.begin(), m_audioCallback.end(), pCallback);
   if (it != m_audioCallback.end())
     m_audioCallback.erase(it);
+}
+
+int CActiveAE::ReadWavData(const std::string &filename, uint8_t* buf, int size)
+{
+  CFile wavFile = CFile();
+  if (wavFile.Open(filename)) {
+    int64_t fileSize = wavFile.GetLength();
+    CLog::Log(LOGINFO, "WAV file size: {} bytes", fileSize);
+
+    // Skip WAV header (44 bytes for standard WAV)
+    const int wavHeaderSize = 44;
+    if (fileSize > wavHeaderSize)
+    {
+      wavFile.Seek(wavHeaderSize, SEEK_SET);
+      int bytesRead = wavFile.Read(buf, size);
+      CLog::Log(LOGINFO, "Read {} bytes of WAV audio data", bytesRead);
+      wavFile.Close();
+      return bytesRead;
+    }
+  } else {
+    CLog::Log(LOGERROR, "Failed to open WAV file: {}", filename);
+  }
 }

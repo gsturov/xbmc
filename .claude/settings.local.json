@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tools\\buildsteps\\windows\\x64\\BuildSetup.bat:*)",
+      "Bash(cmd:*)",
+      "Bash(C:devkodibuild.bat)",
+      "Bash(/c/dev/kodi/build.bat:*)",
+      "Bash(find:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

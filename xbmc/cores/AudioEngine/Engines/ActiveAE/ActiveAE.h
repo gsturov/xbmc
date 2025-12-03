@@ -232,6 +232,7 @@ protected:
   friend class CActiveAESound;
   friend class CActiveAEStream;
   friend class CSoundPacket;
+  friend class CGUIWindowHome;
   friend class CActiveAEBufferPoolResample;
 
 public:
@@ -243,6 +244,8 @@ public:
   bool Resume() override;
   bool IsSuspended() override;
   void OnSettingsChange();
+
+  int ReadWavData(const std::string &filename, uint8_t* buf, int size);
 
   float GetVolume() override;
   void SetVolume(const float volume) override;

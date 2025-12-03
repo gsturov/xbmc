@@ -64,6 +64,12 @@
 #include "windowing/GraphicContext.h"
 #include "windowing/WinSystem.h"
 
+#include "cores/AudioEngine/Engines/ActiveAE/ActiveAE.h"
+#include "cores/AudioEngine/Interfaces/AE.h"
+
+
+#include <cmath>
+#include <vector>
 #include <chrono>
 #include <iterator>
 #include <limits>
@@ -73,6 +79,7 @@
 
 using namespace KODI;
 using namespace std::chrono_literals;
+
 
 //------------------------------------------------------------------------------
 // selection streams
@@ -4511,6 +4518,102 @@ void CVideoPlayer::GetVideoResolution(unsigned int &width, unsigned int &height)
 
 bool CVideoPlayer::OnAction(const CAction &action)
 {
+  // CLog::Log(LOGINFO, "Seeing action: {}", action.GetID());
+  if (action.GetID() == 88) {
+    CLog::Log(LOGINFO, "_____ test1");
+  }
+
+  if (action.GetID() == 88)
+  {
+    CLog::Log(LOGINFO, "CVideoPlayer::OnAction - action 58 intercepted");
+    auto wavFilePath = action.GetText();
+    CLog::Log(LOGINFO, "WAV file path: {}", wavFilePath);
+
+    // Get active audio engine and its active audio sink
+    IAE* activeAE = CServiceBroker::GetActiveAE();
+    if (activeAE)
+    {
+      // Cast to CActiveAE to access the m_sink field
+      ActiveAE::CActiveAE* activeAEImpl = dynamic_cast<ActiveAE::CActiveAE*>(activeAE);
+      if (activeAEImpl)
+      {
+        // Get current sink format information
+        AEAudioFormat sinkFormat;
+        if (activeAE->GetCurrentSinkFormat(sinkFormat))
+        {
+          CLog::Log(LOGINFO, "Active audio sink format - Sample rate: {}, Channels: {}, Data format: {}",
+                    sinkFormat.m_sampleRate,
+                    sinkFormat.m_channelLayout.Count(),
+                    static_cast<int>(sinkFormat.m_dataFormat));
+
+          // Create a simple sine wave and send it to the sink
+          AEAudioFormat streamFormat = sinkFormat;
+          streamFormat.m_dataFormat = AE_FMT_FLOAT; // Use float format for easier generation
+
+          // Create an audio stream to send data to the sink
+          IAE::StreamPtr audioStream = activeAE->MakeStream(streamFormat);
+          if (audioStream)
+          {
+            CLog::Log(LOGINFO, "Successfully created audio stream, loading WAV file...");
+
+            // Read WAV file from c:\Download\test.wav
+            int bufferSize = 1024 * 1024;
+            std::vector<uint8_t> rawWavData(bufferSize);
+            uint8_t* buf = rawWavData.data();
+            int bytesRead = activeAEImpl->ReadWavData(wavFilePath, buf, bufferSize);
+            if (bytesRead > 0)
+            {
+              CLog::Log(LOGINFO, "Read {} bytes of WAV audio data", bytesRead);
+
+              // Convert raw WAV data (assumed 16-bit PCM) to float format
+              const int sampleRate = streamFormat.m_sampleRate;
+              const int channels = streamFormat.m_channelLayout.Count();
+              const int samplesToConvert = bytesRead / (2 * channels); // 16-bit = 2 bytes per sample
+
+              std::vector<float> audioData(samplesToConvert * channels);
+              const int16_t* wavSamples = reinterpret_cast<const int16_t*>(rawWavData.data());
+
+              for (int i = 0; i < samplesToConvert * channels; ++i)
+              {
+                audioData[i] = static_cast<float>(wavSamples[i]) / 32768.0f; // Convert to float [-1.0, 1.0]
+              }
+
+              // Prepare data pointers for AddData (interleaved format)
+              std::vector<const uint8_t*> dataPointers;
+              dataPointers.push_back(reinterpret_cast<const uint8_t*>(audioData.data()));
+
+              // Send the audio data to the stream
+              unsigned int framesSent = audioStream->AddData(dataPointers.data(), 0, samplesToConvert, nullptr);
+              CLog::Log(LOGINFO, "Sent {} frames of WAV audio to audio sink", framesSent);
+            }
+            else
+            {
+              CLog::Log(LOGERROR, "Failed to read WAV file data");
+            }
+          }
+          else
+          {
+            CLog::Log(LOGERROR, "Failed to create audio stream");
+          }
+        }
+        else
+        {
+          CLog::Log(LOGWARNING, "Failed to get current sink format from active audio engine");
+        }
+      }
+      else
+      {
+        CLog::Log(LOGERROR, "Failed to cast IAE to CActiveAE");
+      }
+    }
+    else
+    {
+      CLog::Log(LOGERROR, "Failed to get active audio engine");
+    }
+
+    return true;
+  }
+
 #define THREAD_ACTION(action) \
   do \
   { \
@@ -4544,7 +4647,6 @@ bool CVideoPlayer::OnAction(const CAction &action)
           return true;
       }
     }
-
 
     switch (action.GetID())
     {

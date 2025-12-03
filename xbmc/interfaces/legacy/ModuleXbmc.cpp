@@ -46,6 +46,10 @@
 #include "utils/XTimeUtils.h"
 #include "utils/log.h"
 
+#include "cores/AudioEngine/Engines/ActiveAE/ActiveAE.h"
+#include "cores/AudioEngine/Interfaces/AE.h"
+#include "input/actions/Action.h"
+
 #include <vector>
 
 using namespace KODI;
@@ -327,6 +331,11 @@ namespace XBMCAddon
       XBMC_TRACE;
       if (!filename)
         return;
+
+      auto action = new CAction(88);
+      action->SetText(filename);
+      CServiceBroker::GetAppMessenger()->PostMsg(TMSG_GUI_ACTION, WINDOW_INVALID, -1, static_cast<void*>(action));
+      return;
 
       CGUIComponent* gui = CServiceBroker::GetGUI();
       if (CFileUtils::Exists(filename) && gui)
