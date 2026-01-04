@@ -4557,7 +4557,7 @@ bool CVideoPlayer::OnAction(const CAction &action)
             CLog::Log(LOGINFO, "Successfully created audio stream, loading WAV file...");
 
             // Read WAV file from c:\Download\test.wav
-            int bufferSize = 1024 * 1024;
+            int bufferSize = 3 * 1024 * 1024;
             std::vector<uint8_t> rawWavData(bufferSize);
             uint8_t* buf = rawWavData.data();
             int bytesRead = activeAEImpl->ReadWavData(wavFilePath, buf, bufferSize);
