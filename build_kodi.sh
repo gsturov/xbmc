@@ -3,7 +3,7 @@ cd $HOME/local-dev/kodi/tools/depends
 ./bootstrap
 #read -p "Press enter to continue"
 
-./configure --with-tarballs=$HOME/android-tools/xbmc-tarballs --host=arm-linux-androideabi --with-sdk-path=$HOME/android-tools/android-sdk-linux --prefix=$HOME/android-tools/xbmc-depends
+./configure --with-tarballs=$HOME/android-tools/xbmc-tarballs --host=aarch64-linux-android --with-sdk-path=$HOME/android-tools/android-sdk-linux --prefix=$HOME/android-tools/xbmc-depends
 #read -p "Press enter to continue"
 
 make -j$(getconf _NPROCESSORS_ONLN)
@@ -35,6 +35,3 @@ make apk
 
 
 cd /home/gleb/kodi-build/tools/android/packaging/xbmc/build/outputs/apk/debug
-
-
-
